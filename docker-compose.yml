@@ -1,0 +1,29 @@
+services:
+  db:
+    image: postgres:15
+    container_name: pereval_db
+    environment:
+      POSTGRES_USER: ${FSTR_DB_LOGIN}
+      POSTGRES_PASSWORD: ${FSTR_DB_PASS}
+      POSTGRES_DB: ${FSTR_DB_NAME}
+    ports:
+      - "${FSTR_DB_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  web:
+    build: .
+    container_name: pereval_web
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - .:/app
+    working_dir: /app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    env_file:
+      - .env
+
+volumes:
+  postgres_data:
