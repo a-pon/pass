@@ -37,7 +37,7 @@ class PerevalAdded(Base):
     status = Column(Enum(Status), default=Status.new)
     user_id = Column(Integer, ForeignKey('users.id'))
     coord_id = Column(Integer, ForeignKey('coords.id'))
-    beauty_title = Column(String(128))
+    beauty_title = Column(String(8), default='пер. ')
     title = Column(String(128), nullable=False)
     other_titles = Column(String(256))
     connect = Column(String(128))
