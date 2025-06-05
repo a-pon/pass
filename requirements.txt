@@ -8,3 +8,6 @@ pydantic-settings
 psycopg2-binary
 greenlet
 python-dotenv
+pytest
+pytest-asyncio
+httpx
