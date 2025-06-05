@@ -101,3 +101,15 @@ async def update_pereval(pereval_id: int, data: PerevalCreateSchema, session: db
     except Exception as e:
         await session.rollback()
         return {'state': 0, 'message': f'Update failed: {str(e)}'}
+
+
+@app.get('/submitData', response_model=List[PerevalDetailSchema])
+async def get_perevals_by_user(email: str, session: db_dependency):
+    query = select(PerevalAdded).join(PerevalAdded.user).where(User.email == email).options(
+        joinedload(PerevalAdded.user),
+        joinedload(PerevalAdded.coords),
+        joinedload(PerevalAdded.images)
+    )
+    result = await session.execute(query)
+    perevals = result.scalars().all()
+    return perevals
