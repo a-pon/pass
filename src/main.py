@@ -1,8 +1,13 @@
+from typing import List
+
 from fastapi import FastAPI, HTTPException
+from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import joinedload
 
 from src.db import db_dependency
-from src.schemas import PerevalCreateSchema, PerevalResponseSchema
+from src.models import PerevalAdded, PerevalImage, Status, User
+from src.schemas import PerevalCreateSchema, PerevalDetailSchema, PerevalResponseSchema
 from src.services import (add_images_to_pereval,
                           create_coords,
                           create_pereval,
@@ -42,6 +47,20 @@ async def submit_data(data: PerevalCreateSchema, session: db_dependency):
     except SQLAlchemyError:
         await session.rollback()
         raise HTTPException(status_code=500, detail='Database error')
-    except Exception:
+    except Exception as e:
         await session.rollback()
-        raise HTTPException(status_code=500, detail='Unexpected server error')
+        raise HTTPException(status_code=500, detail=f'{str(e)}')
+
+
+@app.get('/submitData/{pereval_id}', response_model=PerevalDetailSchema)
+async def get_pereval_by_id(pereval_id: int, session: db_dependency):
+    query = select(PerevalAdded).where(PerevalAdded.id == pereval_id).options(
+        joinedload(PerevalAdded.user),
+        joinedload(PerevalAdded.coords),
+        joinedload(PerevalAdded.images)
+    )
+    result = await session.execute(query)
+    pereval = result.scalar_one_or_none()
+    if not pereval:
+        raise HTTPException(status_code=404, detail='Pereval not found')
+    return pereval

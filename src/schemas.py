@@ -2,6 +2,8 @@ from typing import List, Optional
 
 from pydantic import BaseModel, EmailStr, Field
 
+from src.models import Status
+
 
 class UserSchema(BaseModel):
     name: str
@@ -44,3 +46,20 @@ class PerevalResponseSchema(BaseModel):
     status: int = Field(..., example=200)
     message: str
     id: Optional[int] = None
+
+
+class PerevalDetailSchema(BaseModel):
+    id: int
+    status: Status
+    user: UserSchema
+    beauty_title: Optional[str] = None
+    title: str
+    other_titles: Optional[str] = None
+    connect: Optional[str] = None
+    add_time: Optional[str]
+    level: Optional[LevelSchema]
+    coords: CoordsSchema
+    images: List[ImageSchema] = []
+
+    class Config:
+        from_attributes = True
