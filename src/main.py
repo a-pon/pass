@@ -64,3 +64,40 @@ async def get_pereval_by_id(pereval_id: int, session: db_dependency):
     if not pereval:
         raise HTTPException(status_code=404, detail='Pereval not found')
     return pereval
+
+
+@app.patch('/submitData/{pereval_id}')
+async def update_pereval(pereval_id: int, data: PerevalCreateSchema, session: db_dependency):
+    try:
+        query = select(PerevalAdded).where(PerevalAdded.id == pereval_id).options(
+            joinedload(PerevalAdded.user),
+            joinedload(PerevalAdded.coords),
+            joinedload(PerevalAdded.images)
+        )
+        result = await session.execute(query)
+        pereval = result.scalar_one_or_none()
+        if not pereval:
+            return {'state': 0, 'message': 'Pereval not found'}
+        if pereval.status != Status.new:
+            return {'state': 0, 'message': 'Update failed: Status is not "new"'}
+
+        pereval.title = data.title
+        pereval.other_titles = data.other_titles
+        pereval.connect = data.connect
+        pereval.level_winter = data.level.winter if data.level else None
+        pereval.level_spring = data.level.spring if data.level else None
+        pereval.level_summer = data.level.summer if data.level else None
+        pereval.level_autumn = data.level.autumn if data.level else None
+        pereval.coords.latitude = data.coords.latitude
+        pereval.coords.longitude = data.coords.longitude
+        pereval.coords.height = data.coords.height
+        await session.execute(
+            PerevalImage.__table__.delete().where(PerevalImage.pereval_id == pereval.id)
+        )
+        for img in data.images or []:
+            session.add(PerevalImage(pereval_id=pereval.id, image_url=img.image_url))
+        await session.commit()
+        return {'state': 1, 'message': 'Updated successfully'}
+    except Exception as e:
+        await session.rollback()
+        return {'state': 0, 'message': f'Update failed: {str(e)}'}
