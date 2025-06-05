@@ -13,10 +13,16 @@ from src.services import (add_images_to_pereval,
                           create_pereval,
                           get_or_create_user)
 
-app = FastAPI()
+app = FastAPI(
+    title='Mountain-pass-REST_API-App',
+    description='An app for creating a database of mountain passes.',
+    version='1.0.0'
+)
 
 
-@app.post('/submitData', response_model=PerevalResponseSchema)
+@app.post('/submitData',
+          response_model=PerevalResponseSchema,
+          summary='Add new mountain pass')
 async def submit_data(data: PerevalCreateSchema, session: db_dependency):
     try:
         user_data = data.user
@@ -52,7 +58,9 @@ async def submit_data(data: PerevalCreateSchema, session: db_dependency):
         raise HTTPException(status_code=500, detail=f'{str(e)}')
 
 
-@app.get('/submitData/{pereval_id}', response_model=PerevalDetailSchema)
+@app.get('/submitData/{pereval_id}',
+         response_model=PerevalDetailSchema,
+         summary='Get mountain pass by id')
 async def get_pereval_by_id(pereval_id: int, session: db_dependency):
     query = select(PerevalAdded).where(PerevalAdded.id == pereval_id).options(
         joinedload(PerevalAdded.user),
@@ -66,7 +74,8 @@ async def get_pereval_by_id(pereval_id: int, session: db_dependency):
     return pereval
 
 
-@app.patch('/submitData/{pereval_id}')
+@app.patch('/submitData/{pereval_id}',
+           summary='Update mountain pass info')
 async def update_pereval(pereval_id: int, data: PerevalCreateSchema, session: db_dependency):
     try:
         query = select(PerevalAdded).where(PerevalAdded.id == pereval_id).options(
@@ -103,7 +112,9 @@ async def update_pereval(pereval_id: int, data: PerevalCreateSchema, session: db
         return {'state': 0, 'message': f'Update failed: {str(e)}'}
 
 
-@app.get('/submitData', response_model=List[PerevalDetailSchema])
+@app.get('/submitData',
+         response_model=List[PerevalDetailSchema],
+         summary='Get mountain passes by user email')
 async def get_perevals_by_user(email: str, session: db_dependency):
     query = select(PerevalAdded).join(PerevalAdded.user).where(User.email == email).options(
         joinedload(PerevalAdded.user),
